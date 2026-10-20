@@ -1,4 +1,3 @@
-
 import aiohttp
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -15,12 +14,15 @@ API_URL = "https://api.osintxc.com/num"
 ADMIN_IDS = [8147130832]
 BOT_USERNAME = "@OSINT_SAD_AURA_BOT"
 
-# 🔴 FORCE JOIN CHANNEL — yahan apna channel username daalein (@ ke saath)
+# 🔴 FORCE JOIN CHANNEL
 FORCE_CHANNEL = "@OSINTchannelv1"
 FORCE_CHANNEL_LINK = "https://t.me/OSINTchannelv1"
 # ==========================================
 
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 logger = logging.getLogger(__name__)
 
 USERS = set()
@@ -36,7 +38,9 @@ def main_menu_keyboard():
 
 
 def back_keyboard():
-    return InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back")]])
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("🔙 Back", callback_data="back")]]
+    )
 
 
 def admin_keyboard():
@@ -96,40 +100,23 @@ async def fetch_number_info(number: str):
         return {"error": str(e)}
 
 
-# ---------- Formatter: ek-ek line, emoji ke saath ----------
+# ---------- Formatter ----------
 def format_result(data: dict) -> str:
     if not data:
         return "❌ No data found."
     if "error" in data:
         return f"❌ Error: {data['error']}"
 
-    # 🔹 Har field ke liye alag emoji
     emoji_map = {
-        "name": "👤",
-        "father_name": "👨",
-        "mother_name": "👩",
-        "address": "🏠",
-        "pincode": "📍",
-        "pin_code": "📍",
-        "aadhar": "🆔",
-        "aadhar_number": "🆔",
-        "alt_number": "📞",
-        "alternate_number": "📞",
-        "alternate number": "📞",
-        "mobile": "📱",
-        "number": "📱",
-        "email": "📧",
-        "dob": "🎂",
-        "date_of_birth": "🎂",
-        "gender": "⚧",
-        "age": "🎈",
-        "circle": "🌐",
-        "operator": "📡",
-        "state": "🗺️",
-        "district": "🏙️",
-        "village": "🏘️",
-        "photo": "🖼️",
-        "image": "🖼️",
+        "name": "👤", "father_name": "👨", "mother_name": "👩",
+        "address": "🏠", "pincode": "📍", "pin_code": "📍",
+        "aadhar": "🆔", "aadhar_number": "🆔",
+        "alt_number": "📞", "alternate_number": "📞", "alternate number": "📞",
+        "mobile": "📱", "number": "📱", "email": "📧",
+        "dob": "🎂", "date_of_birth": "🎂", "gender": "⚧",
+        "age": "🎈", "circle": "🌐", "operator": "📡",
+        "state": "🗺️", "district": "🏙️", "village": "🏘️",
+        "photo": "🖼️", "image": "🖼️",
     }
 
     order = [
@@ -155,7 +142,6 @@ def format_result(data: dict) -> str:
         lines.append(f"{emoji} <b>{key_title}</b>\n   ↳ <code>{v}</code>")
         processed.add(k)
 
-    # 1️⃣ Pehle predefined order
     for desired in order:
         for k, v in data.items():
             if k in processed:
@@ -163,7 +149,6 @@ def format_result(data: dict) -> str:
             if str(k).lower().strip() == desired:
                 add_line(k, v)
 
-    # 2️⃣ Baaki bachi details
     for k, v in data.items():
         if k not in processed:
             add_line(k, v)
@@ -176,6 +161,9 @@ def format_result(data: dict) -> str:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     USERS.add(user.id)
+    # reset state on fresh start
+    context.user_data["awaiting_number"] = False
+    context.user_data["awaiting_broadcast"] = False
 
     if not await is_joined(context, user.id):
         return await force_join_prompt(update, context)
@@ -189,7 +177,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "♾️ <b>Unlimited Lookups</b> — jitna chahein use karein.\n\n"
         "👇 Neeche button dabaiye:"
     )
-    await update.message.reply_text(text, parse_mode="HTML", reply_markup=main_menu_keyboard())
+    await update.message.reply_text(
+        text, parse_mode="HTML", reply_markup=main_menu_keyboard()
+    )
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -201,6 +191,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Verify join button
     if data == "verify_join":
         if await is_joined(context, user_id):
+            context.user_data["awaiting_number"] = False
             await query.edit_message_text(
                 "✅ <b>Verified!</b>\n\nAb aap bot use kar sakte hain. 👇",
                 parse_mode="HTML",
@@ -210,12 +201,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ Pehle channel join karein!", show_alert=True)
         return
 
-    # Baaki sab ke liye force join check
+    # Force join check for all other buttons
     if not await is_joined(context, user_id):
         return await force_join_prompt(update, context)
 
     if data == "lookup":
         context.user_data["awaiting_number"] = True
+        context.user_data["awaiting_broadcast"] = False
         await query.edit_message_text(
             "📱 <b>Number Lookup</b>\n\n"
             "Apna number bhejiye (example <code>9876543210</code>):\n"
@@ -226,6 +218,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if data == "help":
+        context.user_data["awaiting_number"] = False
         await query.edit_message_text(
             "ℹ️ <b>Help</b>\n\n"
             "🔹 <b>Number Lookup</b> — kisi bhi number ki info nikaalein\n"
@@ -239,6 +232,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "back":
         context.user_data["awaiting_number"] = False
+        context.user_data["awaiting_broadcast"] = False
         await query.edit_message_text(
             "🏠 <b>Main Menu</b>\n\nKya karna chahte hain? 👇",
             parse_mode="HTML",
@@ -252,6 +246,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("⛔ Access Denied", show_alert=True)
             return
 
+        context.user_data["awaiting_number"] = False
+
         if data == "admin_stats":
             await query.edit_message_text(
                 f"📊 <b>Bot Stats</b>\n\n"
@@ -263,7 +259,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif data == "admin_users":
             await query.edit_message_text(
                 f"👥 <b>Total Users:</b> {len(USERS)}\n\n"
-                + ("\n".join(f"• <code>{u}</code>" for u in list(USERS)[:50]) or "No users yet."),
+                + ("\n".join(f"• <code>{u}</code>" for u in list(USERS)[:50])
+                   or "No users yet."),
                 parse_mode="HTML",
                 reply_markup=admin_keyboard(),
             )
@@ -292,7 +289,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 sent += 1
             except Exception:
                 pass
-        await update.message.reply_text(f"✅ Broadcast sent to {sent}/{len(USERS)} users.")
+        await update.message.reply_text(
+            f"✅ Broadcast sent to {sent}/{len(USERS)} users."
+        )
         return
 
     # Force join check
@@ -319,9 +318,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    # ⚠️ FIX: fallback — dobara menu na bhejein, sirf hint bhejein
     await update.message.reply_text(
-        "👇 Please menu se option chuniye:",
-        reply_markup=main_menu_keyboard(),
+        "👇 Pehle menu se <b>🔍 Number Lookup</b> option chuniye,\n"
+        "phir apna number bhejiye.",
+        parse_mode="HTML",
+        reply_markup=back_keyboard(),
     )
 
 
@@ -329,6 +331,8 @@ async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS:
         await update.message.reply_text("⛔ Access Denied")
         return
+    context.user_data["awaiting_number"] = False
+    context.user_data["awaiting_broadcast"] = False
     await update.message.reply_text(
         "🛠 <b>Admin Panel</b>",
         parse_mode="HTML",
@@ -341,7 +345,9 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_cmd))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+    )
     print("🤖 Bot is running...")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
