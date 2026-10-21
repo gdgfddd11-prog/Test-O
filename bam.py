@@ -7,7 +7,7 @@ from telegram.ext import (
 )
 
 # ================= CONFIG =================
-BOT_TOKEN = "8983990219:AAE7dNEPI6F2Ta6jy35x_lX7DCWGrR6g5mY"
+BOT_TOKEN = "8689112558:AAHCjp8wj2HsCZgnO5uNYY8l3Iclzt2ndn0"
 API_KEY = "KEY"                              # api.osintxc.com key
 API_URL = "https://api.osintxc.com/num"
 
