@@ -1,1 +1,1 @@
-{ "deploy": { "startCommand": "python bot.py" } }
+{ "deploy": { "startCommand": "python main.py" } }
