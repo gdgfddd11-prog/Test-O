@@ -13,7 +13,7 @@ from telegram.ext import (
 )
 
 # ========== CONFIG ==========
-BOT_TOKEN = ("8996653971:AAEkaE5HFsQi-i9oOoTVYwjxKj8kF9NoT1U")
+BOT_TOKEN = ("8447913177:AAEH-OUPNXNLiDZbegX6FByA23vkpFKBGo8")
 API_BASE = "https://api.sarkariallupdates.com/api"
 API_KEY = "demo"
 
