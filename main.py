@@ -14,7 +14,7 @@ from telegram.ext import (
 
 # ========== CONFIG ==========
 BOT_TOKEN = ("8811516200:AAEJIltjhpG2msdqAnS1OH48fR0j1JwP0jA")
-API_BASE = "https://api.sarkariallupdates.com/api"
+API_BASE = "https://api.allprinthub.in/api"
 API_KEY = "demo"
 
 ADMIN_IDS = {8147130832}
