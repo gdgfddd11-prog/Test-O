@@ -29,7 +29,7 @@ except ImportError:
     logging.warning("reportlab not installed. PDF feature disabled. Install: pip install reportlab")
 
 # ========== CONFIG ==========
-BOT_TOKEN = ("8811516200:AAHGviaM13QMw9ejl4KSchL7_tfEM6pog1A)
+BOT_TOKEN = ("8811516200:AAHGviaM13QMw9ejl4KSchL7_tfEM6pog1A")
 
 # ---------- ALLPRINTHUB API ----------
 API_BASE = "https://api.allprinthub.in/api"
